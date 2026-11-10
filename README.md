@@ -1,56 +1,64 @@
-# Welcome to your Expo app 👋
+# Hello Cliente — Pocket Hub (app do lojista)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App React Native (Expo SDK 58, Expo Router, TypeScript) para o lojista acessar
+os sistemas adotados na plataforma Hello Cliente. Consome a mesma API do
+frontend web.
 
-## Get started
+## Funcionalidades
 
-1. Install dependencies
+- Login do lojista com WhatsApp e senha (`POST /auth/login`).
+- "Meus sistemas": adoções ativas e revogações (`GET /merchant/matches`).
+- "Abrir": abre o sistema do desenvolvedor no navegador interno do celular
+  (Chrome Custom Tabs / SFSafariViewController, via `expo-web-browser`).
+- "Revogar acesso": confirmação e registro da revogação
+  (`POST /merchant/matches/:id/revoke`), com acompanhamento do prazo de exclusão.
 
-   ```bash
-   npm install
-   ```
+Cadastro, vitrine e adoção continuam no site; o link "Cadastre seu negócio"
+abre o site no navegador interno.
 
-2. Start the app
+## Executar
 
-   ```bash
-   npx expo start
-   ```
+Copie `.env.example` para `.env.local` e ajuste os endereços:
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```dotenv
+EXPO_PUBLIC_API_URL=http://localhost:3333
+EXPO_PUBLIC_WEB_URL=http://localhost:3000
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+- Emulador Android: use `http://10.0.2.2:3333` como URL da API.
+- Celular físico com Expo Go: use o IP do computador na rede local.
+- `EXPO_PUBLIC_WEB_URL` precisa constar em `CORS_ORIGINS` no backend.
 
-### Other setup steps
+```bash
+npm install
+npx expo start
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Para a versão web (`npx expo start --web`), inclua também
+`http://localhost:8081` em `CORS_ORIGINS`.
 
-## Learn more
+## Sessão
 
-To learn more about developing your project with Expo, look at the following resources:
+O access token fica apenas em memória. O refresh token é o cookie HttpOnly
+`hc_refresh`, guardado pelo armazenamento de cookies nativo do sistema; ao abrir
+o app a sessão é restaurada por `POST /auth/refresh`. A renovação é serializada
+porque o backend rotaciona o refresh token a cada uso.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+O backend exige um `Origin` autorizado nos POSTs de autenticação. Clientes
+nativos não enviam esse cabeçalho, então o app envia `EXPO_PUBLIC_WEB_URL`.
+Em produção o cookie é `Secure`: a API precisa estar em HTTPS.
 
-## Join the community
+## Organização
 
-Join our community of developers creating universal apps.
+- `src/app/`: rotas — `_layout.tsx` (sessão e proteção de rotas), `entrar.tsx`, `index.tsx`.
+- `src/providers/session-provider.tsx`: usuário autenticado, login e logout.
+- `src/services/api.ts`: transporte, erros, paginação e renovação de sessão.
+- `src/hooks/use-matches.ts`: adoções do lojista e revogação.
+- `src/components/`: botão, marca, cartão de sistema e diálogo de revogação.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Verificar
+
+```bash
+npm run typecheck
+npm run lint
+```
